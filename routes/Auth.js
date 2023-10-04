@@ -4,6 +4,7 @@ const User = require('../models/User')
 const { body, validationResult } = require('express-validator')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const fetchUser = require('../middleware/fetchuser')
 const SEC_TEXT = 'Rahul$123@45'
 
 router.use((req, res, next) => {
@@ -60,14 +61,14 @@ router.post("/createuser",
 
 // User login or checking weather user does exist or note/
 router.post('/login', [
-  body('email','Enter valid name').isEmail(),
-  body('password','Password should be min 5 char').isLength({ min: 5 })
+  body('email', 'Enter valid name').isEmail(),
+  body('password', 'Password should be min 5 char').isLength({ min: 5 })
 ], async (req, res) => {
   try {
     const { email, password } = req.body;
     const payloadError = await validationResult(req);
     if (!payloadError.isEmpty()) {
-      return res.status(400).json({ errors: payloadError.array()});
+      return res.status(400).json({ errors: payloadError.array() });
     }
 
     const user = await User.findOne({ email });
@@ -90,6 +91,20 @@ router.post('/login', [
   catch (error) {
     console.log(error.message);
     return res.status(500).json({ errors: 'Internal Error occurred' })
+  }
+})
+
+
+router.post('/getuser', fetchUser, async (req, res) => {
+  const email = req.user.email;
+  console.log(email);
+  try {
+    const user = await User.findOne({ email }).select("-password");
+    res.send(user);
+
+  } catch (error) {
+    console.log(error.message);
+    res.status(401).send({ error: 'Please authenticate using the valid token' })
   }
 })
 
