@@ -35,15 +35,16 @@ router.post("/createuser",
       // saving user to mongoose data base.
       const salt = await bcrypt.genSaltSync(10);
       const hasPassword = await bcrypt.hashSync(req.body.password, salt);
-      user = await User.create({
+      user = new User({
         name: req.body.name,
         email: req.body.email,
         password: hasPassword
       })
+      user=user.save()
         .then(() => {
           let jwtPayLoad = {
             user: {
-              email: req.body.email
+              id: req.body.id
             }
           }
 
@@ -81,7 +82,7 @@ router.post('/login', [
     }
     let jwtPayLoad = {
       user: {
-        email: user.email
+        id: user.id
       }
     }
 
@@ -96,14 +97,12 @@ router.post('/login', [
 
 
 router.post('/getuser', fetchUser, async (req, res) => {
-  const email = req.user.email;
-  console.log(email);
+  const id = req.user.id;
   try {
-    const user = await User.findOne({ email }).select("-password");
+    const user = await User.findById(id).select("-password");
     res.send(user);
 
   } catch (error) {
-    console.log(error.message);
     res.status(401).send({ error: 'Please authenticate using the valid token' })
   }
 })
